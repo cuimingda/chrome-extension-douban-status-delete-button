@@ -57,7 +57,7 @@ test("adds one hard delete button after each delete link and forwards the status
     assert.equal(deleteLink.nextElementSibling, hardDeleteLinks[index]);
   });
 
-  assert.equal(hardDeleteLinks[0].textContent, "彻底删除");
+  assert.equal(hardDeleteLinks[0].textContent, "直接删除");
   assert.equal(hardDeleteLinks[0].dataset.statusId, "2975853409");
 
   hardDeleteLinks[0].dispatchEvent(

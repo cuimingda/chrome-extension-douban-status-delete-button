@@ -26,7 +26,7 @@
   function createHardDeleteLink(document, statusId) {
     const hardDeleteLink = document.createElement("a");
     hardDeleteLink.href = "#";
-    hardDeleteLink.textContent = "彻底删除";
+    hardDeleteLink.textContent = "直接删除";
     hardDeleteLink.className = HARD_DELETE_LINK_CLASS;
     hardDeleteLink.dataset.statusId = statusId;
     hardDeleteLink.style.marginLeft = "8px";
