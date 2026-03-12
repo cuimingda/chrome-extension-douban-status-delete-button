@@ -9,6 +9,8 @@ const {
   HARD_DELETE_LINK_CLASS,
   enhanceDeleteLinks,
   extractStatusIdFromDeleteLinkHref,
+  findStatusWrapperByStatusId,
+  removeStatusWrapperByStatusId,
 } = require("../src/deleteButtons");
 
 const sampleHtml = fs.readFileSync(
@@ -29,15 +31,15 @@ test("extracts the status id from a Douban delete link", function extractsStatus
   );
 });
 
-test("adds one hard delete button after each delete link and alerts the status id", function injectsButtons() {
+test("adds one hard delete button after each delete link and forwards the status id on click", function injectsButtons() {
   const dom = new JSDOM(sampleHtml, {
     url: "https://www.douban.com/people/3483848/statuses",
   });
-  const alertCalls = [];
+  const clickContexts = [];
 
   const insertedCount = enhanceDeleteLinks(dom.window.document, {
-    alertFn: function recordAlert(statusId) {
-      alertCalls.push(statusId);
+    onHardDeleteClick: function recordClick(context) {
+      clickContexts.push(context);
     },
   });
 
@@ -65,7 +67,10 @@ test("adds one hard delete button after each delete link and alerts the status i
     }),
   );
 
-  assert.deepEqual(alertCalls, ["2975853409"]);
+  assert.equal(clickContexts.length, 1);
+  assert.equal(clickContexts[0].statusId, "2975853409");
+  assert.equal(clickContexts[0].deleteLink, deleteLinks[0]);
+  assert.equal(clickContexts[0].hardDeleteLink, hardDeleteLinks[0]);
 });
 
 test("does not add duplicate hard delete buttons when run twice", function avoidsDuplicates() {
@@ -78,5 +83,19 @@ test("does not add duplicate hard delete buttons when run twice", function avoid
   assert.equal(
     dom.window.document.querySelectorAll("a." + HARD_DELETE_LINK_CLASS).length,
     4,
+  );
+});
+
+test("finds and removes a status wrapper by status id", function removesStatusWrapper() {
+  const dom = new JSDOM(sampleHtml, {
+    url: "https://www.douban.com/people/3483848/statuses",
+  });
+
+  const statusWrapper = findStatusWrapperByStatusId(dom.window.document, "2975853409");
+  assert.ok(statusWrapper);
+  assert.equal(removeStatusWrapperByStatusId(dom.window.document, "2975853409"), true);
+  assert.equal(
+    findStatusWrapperByStatusId(dom.window.document, "2975853409"),
+    null,
   );
 });

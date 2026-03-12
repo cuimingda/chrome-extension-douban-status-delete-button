@@ -10,6 +10,7 @@
   const DELETE_LINK_SELECTOR =
     'a.btn-action-reply-delete[data-action-type="deleteStatus"]';
   const HARD_DELETE_LINK_CLASS = "douban-status-hard-delete-button";
+  const STATUS_WRAPPER_SELECTOR_PREFIX = '.new-status[data-sid="';
   const STATUS_DETAIL_URL_RE =
     /^https:\/\/www\.douban\.com\/people\/\d+\/status\/(\d+)\/(?:\?[^#]*)?$/;
 
@@ -22,24 +23,38 @@
     return match ? match[1] : null;
   }
 
-  function defaultAlert(statusId) {
-    if (typeof root.alert === "function") {
-      root.alert(statusId);
-    }
-  }
-
-  function createHardDeleteLink(document, statusId, alertFn) {
+  function createHardDeleteLink(document, statusId) {
     const hardDeleteLink = document.createElement("a");
     hardDeleteLink.href = "#";
     hardDeleteLink.textContent = "彻底删除";
     hardDeleteLink.className = HARD_DELETE_LINK_CLASS;
     hardDeleteLink.dataset.statusId = statusId;
     hardDeleteLink.style.marginLeft = "8px";
-    hardDeleteLink.addEventListener("click", function handleClick(event) {
-      event.preventDefault();
-      alertFn(statusId);
-    });
     return hardDeleteLink;
+  }
+
+  function defaultOnHardDeleteClick() {}
+
+  function findStatusWrapperByStatusId(document, statusId) {
+    if (!document || typeof document.querySelector !== "function") {
+      return null;
+    }
+
+    if (!/^\d+$/.test(statusId)) {
+      return null;
+    }
+
+    return document.querySelector(STATUS_WRAPPER_SELECTOR_PREFIX + statusId + '"]');
+  }
+
+  function removeStatusWrapperByStatusId(document, statusId) {
+    const statusWrapper = findStatusWrapperByStatusId(document, statusId);
+    if (!statusWrapper) {
+      return false;
+    }
+
+    statusWrapper.remove();
+    return true;
   }
 
   function enhanceDeleteLinks(document, options) {
@@ -47,8 +62,10 @@
       return 0;
     }
 
-    const alertFn =
-      options && typeof options.alertFn === "function" ? options.alertFn : defaultAlert;
+    const onHardDeleteClick =
+      options && typeof options.onHardDeleteClick === "function"
+        ? options.onHardDeleteClick
+        : defaultOnHardDeleteClick;
     const deleteLinks = document.querySelectorAll(DELETE_LINK_SELECTOR);
     let insertedCount = 0;
 
@@ -62,7 +79,16 @@
         return;
       }
 
-      const hardDeleteLink = createHardDeleteLink(document, statusId, alertFn);
+      const hardDeleteLink = createHardDeleteLink(document, statusId);
+      hardDeleteLink.addEventListener("click", function handleClick(event) {
+        event.preventDefault();
+        onHardDeleteClick({
+          deleteLink: deleteLink,
+          hardDeleteLink: hardDeleteLink,
+          statusId: statusId,
+          event: event,
+        });
+      });
       deleteLink.insertAdjacentElement("afterend", hardDeleteLink);
       deleteLink.dataset.doubanHardDeleteEnhanced = "true";
       insertedCount += 1;
@@ -76,6 +102,8 @@
     HARD_DELETE_LINK_CLASS,
     STATUS_DETAIL_URL_RE,
     extractStatusIdFromDeleteLinkHref,
+    findStatusWrapperByStatusId,
+    removeStatusWrapperByStatusId,
     enhanceDeleteLinks,
   };
 });
