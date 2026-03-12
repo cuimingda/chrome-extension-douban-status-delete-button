@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Douban Status Delete Button",
+  "version": "0.1.0",
+  "description": "Adds hard delete links to supported Douban status list pages.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.douban.com/*"
+      ],
+      "js": [
+        "src/urlMatcher.js",
+        "src/deleteButtons.js",
+        "src/contentScript.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
